@@ -35,6 +35,7 @@ class StarSystem(object):
         self.system_name = system_name
         
         self.make_stars()
+        self.make_planets()
         
     def make_stars(self):
         # How many stars?
@@ -52,16 +53,21 @@ class StarSystem(object):
             number_of_stars = 5
             
         self.star_core = StarCore(number_of_stars)
+        
+    def make_planets(self):
+        pass
             
     def print_chart(self):
         print(f"\n---===  {self.system_name}  ===---\n")
         print("Stars:")
         for place in self.star_core.stars:
             if type(place) == list:
+                print("\n   Binary star:")
                 for star in place:
-                    print(f"---  {star}")
+                    print(f"     {star}")
             else:
-                print(f"-    {place}")
+                print(f"\n   {place}")
+        print(f"\nOrbit track: {self.star_core.orbit_track}")
 
 
 class StarCore(object):  # TODO: make help on star classes and types
