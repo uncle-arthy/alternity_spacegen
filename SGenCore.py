@@ -22,7 +22,11 @@ class Dice(object):
         return result
     
     @staticmethod
-    def complex_roll(sides, modifier, num_of_dices=1, positive=False):
+    def coin_flip():
+        return random.randint(0, 1)
+    
+    @staticmethod
+    def complex_roll(sides, modifier=0, num_of_dices=1, positive=False):
         '''
         Makes roll of XdY+Z type
         :param positive: If true, result is not less than 0
@@ -85,7 +89,26 @@ class StarSystem(object):
         self.star_core = StarCore(number_of_stars)
         
     def make_planets(self):
-        pass
+        habitable_rings = []
+        for ring, distance in enumerate(Planet.ORBIT_TRACKS[self.star_core.orbit_track - 1], start=1):
+            if Dice.coin_flip() and distance != 0:
+                hbtbl_ring = (ring, distance)
+                habitable_rings.append(hbtbl_ring)
+                
+        for ring, distance in habitable_rings:
+            planet = Planet(ring, distance, self)
+            if not planet.planet_type == Planet.COMET_BELT:
+                self.planets.append(planet)
+            else:
+                break
+        
+        print(f"Habitable rings: {len(habitable_rings)}")
+        print(f"Possible planets: {len(self.planets)}")
+                
+        if len(self.planets) > self.star_core.number_of_planets:
+            self.planets = self.planets[:self.star_core.number_of_planets]
+        
+        print(f"Real number of planets: {len(self.planets)}")
             
     def print_chart(self):
         """
@@ -102,6 +125,10 @@ class StarSystem(object):
             else:
                 print(f"\n   {place}")
         print(f"\nOrbit track: {self.star_core.orbit_track}")
+        print(f"Number of planets: {self.star_core.number_of_planets}")
+        print("   Planets:")
+        for planet in self.planets:
+            print(planet.planet_type)
 
 
 class StarCore(object):  # TODO: make help on star classes and types
@@ -295,11 +322,13 @@ class Planet(object):
     SUPER_TERRAN = "Super terran"
     GAS_GIANT_LARGE = "Gas giant, large"
     GAS_GIANT_SMALL = "Gas giant, small"
+    RING_SYSTEM = "Ring system"
     
     # Planet temperature
     TEMPERATE = "Temperate"
     HOT = "Hot"
     COLD = "Cold"
+    NO_TEMP = "N/A"
     
     # Orbit track possible distances as in Table G61 in GMG
     OT_1 = [0.7, 1.0, 1.5, 2.0, 3.0, 5.0, 10.0, 15.0, 20.0, 25.0, 30.0, 35.0, 40.0, 45.0, 50.0, 55.0]
@@ -314,21 +343,124 @@ class Planet(object):
                              (4, 10, 2), (4, 10, 2), (8, 10), (8, 10),
                              (6, 12), (6, 12), (8, 12), (8, 12)]
     
-    def __init__(self, orbit_ring, parent_system=None):
+    def __init__(self, orbit_ring, distance, parent_system=None):
         self.parent_system = parent_system
         self.planet_type = Planet.TERRAN
         self.temperature = Planet.TEMPERATE
         self.graph_type = [0, 0, 0, 0, 0]  # GRAPH type of planet according GMG
         self.moons = []
         self.orbit_ring = orbit_ring
+        self.distance = distance
+        
+        self.define_planet_type()
+        
+    def define_planet_type(self):
+        planet_type_roll = Dice.complex_roll(*Planet.PLANET_TYPES_ON_TRACK[self.orbit_ring - 1])
+        # print(f"Planet type roll: {planet_type_roll}")
+        
+        # Define planet type and temperature as in G62 in GMG
+        # and Moons as in G63 in GMG
+        if planet_type_roll < 1:
+            self.planet_type = Planet.RING_SYSTEM
+            self.temperature = Planet.NO_TEMP
+        elif planet_type_roll == 1:
+            self.planet_type = Planet.SUPER_TERRAN
+            self.temperature = Planet.HOT
+            self.moons = self.define_moons(Dice.complex_roll(6, -3, 1, True), -1)
+        elif planet_type_roll == 2 or planet_type_roll == 3:
+            self.planet_type = Planet.SUB_TERRAN
+            self.temperature = Planet.HOT
+            self.moons = self.define_moons(Dice.complex_roll(4, -3, 1, True), -5)
+        elif planet_type_roll == 4:
+            self.planet_type = Planet.TERRAN
+            self.temperature = Planet.HOT
+            self.moons = self.define_moons(Dice.complex_roll(6, -4, 1, True), -3)
+        elif planet_type_roll == 5:
+            self.planet_type == Planet.TERRAN
+            self.temperature = Planet.TEMPERATE
+            self.moons = self.define_moons(Dice.complex_roll(6, -2, 1, True), -3)
+        elif planet_type_roll == 6:
+            self.planet_type = Planet.SUB_TERRAN
+            self.temperature = Planet.TEMPERATE
+            self.moons = self.define_moons(Dice.complex_roll(6, -3, 1, True), -5)
+        elif planet_type_roll == 7:
+            self.planet_type = Planet.SUPER_TERRAN
+            self.temperature = Planet.TEMPERATE
+            self.moons = self.define_moons(Dice.complex_roll(8, -3, 1, True), -1)
+        elif planet_type_roll == 8 or planet_type_roll == 9:
+            self.planet_type = Planet.ASTEROID_BELT
+            self.temperature = Planet.NO_TEMP
+        elif planet_type_roll == 10 or planet_type_roll == 11:
+            self.planet_type = Planet.GAS_GIANT_LARGE
+            self.temperature = Planet.COLD
+            self.moons = self.define_moons(Dice.complex_roll(12, 0, 2), 0)
+        elif planet_type_roll in range(12, 15):
+            self.planet_type = Planet.GAS_GIANT_SMALL
+            self.temperature = Planet.COLD
+            self.moons = self.define_moons(Dice.complex_roll(12, positive=True), 0)
+        elif planet_type_roll == 15:
+            self.planet_type = Planet.SUPER_TERRAN
+            self.temperature = Planet.COLD
+            self.moons = self.define_moons(Dice.complex_roll(6, positive=True), -1)
+        elif planet_type_roll == 16:
+            self.planet_type = Planet.TERRAN
+            self.temperature = Planet.COLD
+            self.moons = self.define_moons(Dice.complex_roll(4, positive=True), -3)
+        elif planet_type_roll == 17:
+            self.planet_type = Planet.SUB_TERRAN
+            self.temperature = Planet.COLD
+            self.moons = self.define_moons(Dice.complex_roll(3, positive=True), -5)
+        else:
+            self.planet_type = Planet.COMET_BELT
+            self.temperature = Planet.NO_TEMP
 
-
+    def define_moons(self, num_of_moons, modifier):
+        moons_list = []
+        
+        if num_of_moons:
+            for _ in range(num_of_moons):
+                moons_list.append(Moon(self, modifier))
+        
+        return moons_list
+    
+    
 class Moon(object):
-    def __init__(self):
-        self.parent_planet = None
-
-
+    
+    TINY = "Tiny"
+    SMALL = "Small"
+    RING_SYSTEM = "Ring system"
+    SUB_TERRAN = "Sub-terran"
+    TERRAN = "TERRAN"
+    SUPER_TERRAN = "Super-terran"
+    
+    def __init__(self, parent_planet, roll_modifier):
+        self.parent_planet = parent_planet
+        self.moon_type = Moon.TINY
+        self.temperature = parent_planet.temperature
+        
+        moon_roll = Dice.complex_roll(6, roll_modifier, 2)
+        
+        if moon_roll < 4:
+            self.moon_type = Moon.TINY
+        elif moon_roll in range(4, 7):
+            self.moon_type = Moon.SMALL
+        elif moon_roll == 7:
+            self.moon_type = Moon.RING_SYSTEM
+            self.temperature = Planet.NO_TEMP
+        elif moon_roll in range(8, 10):
+            self.moon_type = Moon.SUB_TERRAN
+            if Dice.roll(6) > 1:
+                self.temperature = Planet.TEMPERATE
+        elif moon_roll in range(10, 12):
+            self.moon_type = Moon.TERRAN
+            if Dice.roll(6) > 1:
+                self.temperature = Planet.TEMPERATE
+        else:
+            self.moon_type = Moon.SUPER_TERRAN
+            
+            
 if __name__ == '__main__':
     ss = StarSystem()
     ss.system_name = "Centauri"
     ss.print_chart()
+    # TODO: clear all service 'print' statements ))
