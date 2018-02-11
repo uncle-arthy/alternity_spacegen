@@ -102,13 +102,13 @@ class StarSystem(object):
             else:
                 break
         
-        print(f"Habitable rings: {len(habitable_rings)}")
-        print(f"Possible planets: {len(self.planets)}")
+        # print(f"Habitable rings: {len(habitable_rings)}")
+        # print(f"Possible planets: {len(self.planets)}")
                 
         if len(self.planets) > self.star_core.number_of_planets:
             self.planets = self.planets[:self.star_core.number_of_planets]
         
-        print(f"Real number of planets: {len(self.planets)}")
+        # print(f"Real number of planets: {len(self.planets)}")
             
     def print_chart(self):
         """
@@ -116,19 +116,26 @@ class StarSystem(object):
         :return:
         """
         print(f"\n---===  {self.system_name}  ===---\n")
-        print("Stars:")
+        print("Star(s):")
         for place in self.star_core.stars:
             if type(place) == list:
-                print("\n   Binary star:")
+                print("   Binary star:")
                 for star in place:
                     print(f"     {star}")
             else:
-                print(f"\n   {place}")
-        print(f"\nOrbit track: {self.star_core.orbit_track}")
-        print(f"Number of planets: {self.star_core.number_of_planets}")
-        print("   Planets:")
-        for planet in self.planets:
-            print(planet.planet_type)
+                print("   Single star:")
+                print(f"     {place}")
+        # print(f"\nOrbit track: {self.star_core.orbit_track}")
+        # print(f"Number of planets: {self.star_core.number_of_planets}")
+        if self.planets:
+            print(f"\nPlanet(s)({len(self.planets)}):")
+            for num, planet in enumerate(self.planets, start=1):
+                print(f"{num}. {planet.planet_type}\n   Temp.: {planet.temperature}. "
+                      f"\n   Orbit: {planet.distance} AU")
+                if planet.moons:
+                    print(f"      Moon(s):")
+                    for place, moon in enumerate(planet.moons, start=1):
+                        print(f"         {place}.   {moon.moon_type} ({moon.temperature})")
 
 
 class StarCore(object):  # TODO: make help on star classes and types
@@ -437,7 +444,7 @@ class Moon(object):
     SMALL = "Small"
     RING_SYSTEM = "Ring system"
     SUB_TERRAN = "Sub-terran"
-    TERRAN = "TERRAN"
+    TERRAN = "Terran"
     SUPER_TERRAN = "Super-terran"
     
     def __init__(self, parent_planet, roll_modifier):
