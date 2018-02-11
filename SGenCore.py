@@ -351,8 +351,12 @@ class Planet(object):
         self.moons = []
         self.orbit_ring = orbit_ring
         self.distance = distance
+        self.environment_class = 5
+        self.life_type = 0
         
         self.define_planet_type()
+        
+        self.define_environment()
         
     def define_planet_type(self):
         planet_type_roll = Dice.complex_roll(*Planet.PLANET_TYPES_ON_TRACK[self.orbit_ring - 1])
@@ -423,6 +427,9 @@ class Planet(object):
         
         return moons_list
     
+    def define_environment(self):
+        pass
+    
     
 class Moon(object):
     
@@ -437,6 +444,8 @@ class Moon(object):
         self.parent_planet = parent_planet
         self.moon_type = Moon.TINY
         self.temperature = parent_planet.temperature
+        self.environment_class = 5
+        self.life_type = 0
         
         moon_roll = Dice.complex_roll(6, roll_modifier, 2)
         
@@ -457,6 +466,11 @@ class Moon(object):
                 self.temperature = Planet.TEMPERATE
         else:
             self.moon_type = Moon.SUPER_TERRAN
+            
+        self.define_environment()
+        
+    def define_environment(self):
+        pass
             
             
 if __name__ == '__main__':
